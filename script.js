@@ -11,7 +11,46 @@ import {
   toTimeString,
 } from "./timerCore.js";
 
-let state = createInitialState();
+// Settings management
+const SETTINGS_KEY = "pomodoroSettings";
+const DEFAULT_SETTINGS = {
+  workMinutes: 25,
+  breakMinutes: 5,
+  theme: "dark",
+  soundStart: true,
+  soundEnd: true,
+  soundTick: false,
+};
+
+function loadSettings() {
+  try {
+    const saved = localStorage.getItem(SETTINGS_KEY);
+    return saved ? { ...DEFAULT_SETTINGS, ...JSON.parse(saved) } : { ...DEFAULT_SETTINGS };
+  } catch (_) {
+    return { ...DEFAULT_SETTINGS };
+  }
+}
+
+function saveSettings(s) {
+  try {
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(s));
+  } catch (_) {
+    return;
+  }
+}
+
+let settings = loadSettings();
+
+function applyTheme(theme) {
+  document.documentElement.setAttribute("data-theme", theme);
+}
+
+applyTheme(settings.theme);
+
+let state = createInitialState({
+  workSeconds: settings.workMinutes * 60,
+  breakSeconds: settings.breakMinutes * 60,
+});
 let timerId = null;
 
 const timeLabel = document.getElementById("timeLabel");
@@ -30,6 +69,24 @@ const goalFill = document.getElementById("goalFill");
 const goalBar = document.querySelector(".goal-bar");
 const ring = document.querySelector(".ring-progress");
 
+// Settings panel elements
+const settingsBtn = document.getElementById("settingsBtn");
+const settingsPanel = document.getElementById("settingsPanel");
+const workMinutesSelect = document.getElementById("workMinutesSelect");
+const breakMinutesSelect = document.getElementById("breakMinutesSelect");
+const themeSelect = document.getElementById("themeSelect");
+const soundStartCheck = document.getElementById("soundStartCheck");
+const soundEndCheck = document.getElementById("soundEndCheck");
+const soundTickCheck = document.getElementById("soundTickCheck");
+
+// Initialise settings UI from loaded settings
+workMinutesSelect.value = String(settings.workMinutes);
+breakMinutesSelect.value = String(settings.breakMinutes);
+themeSelect.value = settings.theme;
+soundStartCheck.checked = settings.soundStart;
+soundEndCheck.checked = settings.soundEnd;
+soundTickCheck.checked = settings.soundTick;
+
 const radius = 96;
 const circumference = 2 * Math.PI * radius;
 
@@ -43,9 +100,12 @@ function stopTicking() {
 }
 
 function updateRing() {
-  const ratio = state.remainingSeconds / modes[state.mode].duration;
+  const totalDuration = state.mode === "work" ? state.workSeconds : state.breakSeconds;
+  const ratio = state.remainingSeconds / totalDuration;
   ring.style.strokeDashoffset = `${circumference * (1 - ratio)}`;
-  ring.style.stroke = state.mode === "work" ? "#7fc6ff" : "#a8e4b8";
+  ring.style.stroke = state.mode === "work"
+    ? getComputedStyle(document.documentElement).getPropertyValue("--ring-work").trim()
+    : getComputedStyle(document.documentElement).getPropertyValue("--ring-break").trim();
 }
 
 function updateModeButtons() {
@@ -54,6 +114,8 @@ function updateModeButtons() {
   breakModeBtn.classList.toggle("active", !isWork);
   workModeBtn.setAttribute("aria-selected", String(isWork));
   breakModeBtn.setAttribute("aria-selected", String(!isWork));
+  workModeBtn.textContent = `作業 ${settings.workMinutes}分`;
+  breakModeBtn.textContent = `休憩 ${settings.breakMinutes}分`;
 }
 
 function updateGoal() {
@@ -77,24 +139,52 @@ function render() {
   updateRing();
 }
 
-function playAlertSound() {
+// Shared AudioContext for sound playback
+let audioContext = null;
+
+function getAudioContext() {
+  if (!audioContext || audioContext.state === "closed") {
+    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+  }
+  return audioContext;
+}
+
+function playTone(frequency, duration, gainPeak = 0.2) {
   try {
-    const context = new (window.AudioContext || window.webkitAudioContext)();
+    const context = getAudioContext();
     const oscillator = context.createOscillator();
     const gainNode = context.createGain();
 
     oscillator.type = "sine";
-    oscillator.frequency.setValueAtTime(880, context.currentTime);
+    oscillator.frequency.setValueAtTime(frequency, context.currentTime);
     gainNode.gain.setValueAtTime(0.001, context.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.2, context.currentTime + 0.01);
-    gainNode.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 0.5);
+    gainNode.gain.exponentialRampToValueAtTime(gainPeak, context.currentTime + 0.01);
+    gainNode.gain.exponentialRampToValueAtTime(0.001, context.currentTime + duration);
 
     oscillator.connect(gainNode);
     gainNode.connect(context.destination);
     oscillator.start();
-    oscillator.stop(context.currentTime + 0.5);
+    oscillator.stop(context.currentTime + duration);
   } catch (_) {
     return;
+  }
+}
+
+function playStartSound() {
+  if (settings.soundStart) {
+    playTone(660, 0.15, 0.15);
+  }
+}
+
+function playEndSound() {
+  if (settings.soundEnd) {
+    playTone(880, 0.5, 0.2);
+  }
+}
+
+function playTickSound() {
+  if (settings.soundTick) {
+    playTone(440, 0.05, 0.03);
   }
 }
 
@@ -109,10 +199,12 @@ function sendNotification(title, body) {
 }
 
 function notifyPhaseChange(nextMode) {
-  playAlertSound();
+  playEndSound();
+  const breakMin = settings.breakMinutes;
+  const workMin = settings.workMinutes;
   sendNotification(
     nextMode === "break" ? "休憩時間です" : "作業時間です",
-    nextMode === "break" ? "5分休憩しましょう。" : "25分の作業を開始しましょう。"
+    nextMode === "break" ? `${breakMin}分休憩しましょう。` : `${workMin}分の作業を開始しましょう。`
   );
 }
 
@@ -121,6 +213,8 @@ function finishSession() {
   state = result.state;
   if (result.phaseChanged) {
     notifyPhaseChange(result.phaseChanged);
+  } else {
+    playTickSound();
   }
   render();
 }
@@ -133,6 +227,7 @@ function startTimer() {
   if (state.running) {
     return;
   }
+  playStartSound();
   state = startState(state);
   timerId = setInterval(tick, 1000);
   render();
@@ -192,5 +287,67 @@ notifyBtn.addEventListener("click", async () => {
 if ("Notification" in window && Notification.permission === "granted") {
   notifyBtn.textContent = "通知ON";
 }
+
+// Settings panel toggle
+settingsBtn.addEventListener("click", () => {
+  const isHidden = settingsPanel.hidden;
+  settingsPanel.hidden = !isHidden;
+  settingsBtn.setAttribute("aria-expanded", String(isHidden));
+});
+
+// Settings changes
+function applyWorkDuration(minutes) {
+  const workSeconds = minutes * 60;
+  stopTicking();
+  state = { ...state, workSeconds };
+  if (state.mode === "work") {
+    state = { ...state, remainingSeconds: workSeconds, running: false };
+  }
+  render();
+}
+
+function applyBreakDuration(minutes) {
+  const breakSeconds = minutes * 60;
+  stopTicking();
+  state = { ...state, breakSeconds };
+  if (state.mode === "break") {
+    state = { ...state, remainingSeconds: breakSeconds, running: false };
+  }
+  render();
+}
+
+workMinutesSelect.addEventListener("change", () => {
+  settings.workMinutes = Number(workMinutesSelect.value);
+  saveSettings(settings);
+  applyWorkDuration(settings.workMinutes);
+});
+
+breakMinutesSelect.addEventListener("change", () => {
+  settings.breakMinutes = Number(breakMinutesSelect.value);
+  saveSettings(settings);
+  applyBreakDuration(settings.breakMinutes);
+});
+
+themeSelect.addEventListener("change", () => {
+  settings.theme = themeSelect.value;
+  saveSettings(settings);
+  applyTheme(settings.theme);
+  updateRing();
+});
+
+soundStartCheck.addEventListener("change", () => {
+  settings.soundStart = soundStartCheck.checked;
+  saveSettings(settings);
+});
+
+soundEndCheck.addEventListener("change", () => {
+  settings.soundEnd = soundEndCheck.checked;
+  saveSettings(settings);
+});
+
+soundTickCheck.addEventListener("change", () => {
+  settings.soundTick = soundTickCheck.checked;
+  saveSettings(settings);
+});
 
 render();
