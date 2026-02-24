@@ -10,8 +10,26 @@ import {
   toDurationString,
   toTimeString,
 } from "./timerCore.js";
+import {
+  BADGES,
+  XP_PER_LEVEL,
+  checkBadges,
+  loadFromStorage,
+  saveToStorage,
+  updateStreak,
+  updateWeeklyStats,
+  xpInCurrentLevel,
+} from "./gamification.js";
 
-let state = createInitialState();
+const saved = loadFromStorage();
+let state = createInitialState(saved ? {
+  xp: saved.xp,
+  level: saved.level,
+  streak: saved.streak,
+  lastCompletedDate: saved.lastCompletedDate,
+  earnedBadges: saved.earnedBadges,
+  weeklyStats: saved.weeklyStats,
+} : {});
 let timerId = null;
 
 const timeLabel = document.getElementById("timeLabel");
@@ -29,6 +47,13 @@ const goalText = document.getElementById("goalText");
 const goalFill = document.getElementById("goalFill");
 const goalBar = document.querySelector(".goal-bar");
 const ring = document.querySelector(".ring-progress");
+const levelValue = document.getElementById("levelValue");
+const xpText = document.getElementById("xpText");
+const xpFill = document.getElementById("xpFill");
+const xpBar = document.querySelector(".xp-bar");
+const streakValue = document.getElementById("streakValue");
+const badgesGrid = document.getElementById("badgesGrid");
+const weeklyStatsGrid = document.getElementById("weeklyStatsGrid");
 
 const radius = 96;
 const circumference = 2 * Math.PI * radius;
@@ -64,6 +89,50 @@ function updateGoal() {
   goalBar.setAttribute("aria-valuemax", String(goal.max));
 }
 
+function updateGamification() {
+  const currentXp = xpInCurrentLevel(state.xp);
+  levelValue.textContent = String(state.level);
+  xpText.textContent = `${currentXp} / ${XP_PER_LEVEL} XP`;
+  xpFill.style.width = `${(currentXp / XP_PER_LEVEL) * 100}%`;
+  xpBar.setAttribute("aria-valuenow", String(currentXp));
+  streakValue.textContent = String(state.streak);
+
+  badgesGrid.innerHTML = "";
+  for (const badge of BADGES) {
+    const earned = !!state.earnedBadges[badge.id];
+    const el = document.createElement("div");
+    el.className = `badge-item${earned ? " earned" : ""}`;
+    el.title = badge.desc;
+    el.innerHTML = `<span class="badge-emoji">${badge.emoji}</span><span class="badge-label">${badge.label}</span>`;
+    badgesGrid.appendChild(el);
+  }
+
+  const weeks = Object.entries(state.weeklyStats)
+    .sort(([a], [b]) => b.localeCompare(a))
+    .slice(0, 4);
+  weeklyStatsGrid.innerHTML = "";
+  if (weeks.length === 0) {
+    weeklyStatsGrid.innerHTML = `<p class="stats-empty">データなし</p>`;
+  } else {
+    const maxCompleted = Math.max(...weeks.map(([, v]) => v.completed), 1);
+    for (const [week, data] of weeks) {
+      const hours = Math.floor(data.focusSeconds / 3600);
+      const mins = Math.floor((data.focusSeconds % 3600) / 60);
+      const barPct = Math.round((data.completed / maxCompleted) * 100);
+      const el = document.createElement("div");
+      el.className = "stat-row";
+      el.innerHTML = `
+        <span class="stat-week">${week}</span>
+        <div class="stat-bar-wrap">
+          <div class="stat-bar" style="width:${barPct}%"></div>
+        </div>
+        <span class="stat-count">${data.completed}回 ${hours}時間${String(mins).padStart(2, "0")}分</span>
+      `;
+      weeklyStatsGrid.appendChild(el);
+    }
+  }
+}
+
 function render() {
   timeLabel.textContent = toTimeString(state.remainingSeconds);
   statusText.textContent = state.running ? modes[state.mode].label : `${modes[state.mode].label}（停止中）`;
@@ -75,6 +144,7 @@ function render() {
   updateModeButtons();
   updateGoal();
   updateRing();
+  updateGamification();
 }
 
 function playAlertSound() {
@@ -119,8 +189,34 @@ function notifyPhaseChange(nextMode) {
 function finishSession() {
   const result = tickState(state);
   state = result.state;
-  if (result.phaseChanged) {
-    notifyPhaseChange(result.phaseChanged);
+  if (result.phaseChanged === "break") {
+    const focusSeconds = modes.work.duration;
+    const streakUpdate = updateStreak(state.streak, state.lastCompletedDate);
+    const updatedWeeklyStats = updateWeeklyStats(state.weeklyStats, focusSeconds);
+    const updatedBadges = checkBadges(
+      state.earnedBadges,
+      state.completedCount,
+      streakUpdate.streak,
+      updatedWeeklyStats,
+    );
+    state = {
+      ...state,
+      streak: streakUpdate.streak,
+      lastCompletedDate: streakUpdate.lastCompletedDate,
+      weeklyStats: updatedWeeklyStats,
+      earnedBadges: updatedBadges,
+    };
+    saveToStorage({
+      xp: state.xp,
+      level: state.level,
+      streak: state.streak,
+      lastCompletedDate: state.lastCompletedDate,
+      earnedBadges: state.earnedBadges,
+      weeklyStats: state.weeklyStats,
+    });
+    notifyPhaseChange("break");
+  } else if (result.phaseChanged === "work") {
+    notifyPhaseChange("work");
   }
   render();
 }
