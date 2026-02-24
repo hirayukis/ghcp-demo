@@ -1,6 +1,8 @@
 export const WORK_SECONDS = 25 * 60;
 export const BREAK_SECONDS = 5 * 60;
 export const DAILY_GOAL = 8;
+export const XP_PER_POMODORO = 10;
+export const XP_PER_LEVEL = 100;
 
 export const modes = {
   work: { label: "作業中", duration: WORK_SECONDS },
@@ -105,6 +107,8 @@ export function tickState(state) {
     if (nextState.mode === "work") {
       nextState.completedCount += 1;
       nextState.cycleCount += 1;
+      nextState.xp += XP_PER_POMODORO;
+      nextState.level = Math.floor(nextState.xp / XP_PER_LEVEL) + 1;
       nextState.mode = "break";
       nextState.remainingSeconds = nextState.breakSeconds;
       phaseChanged = "break";
