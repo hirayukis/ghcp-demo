@@ -70,6 +70,25 @@
           </div>
         </div>
       </section>
+
+      <section class="gamification-section" aria-label="ゲーミフィケーション">
+        <div class="xp-row">
+          <span class="level-badge">Lv.<span id="levelValue">1</span></span>
+          <div class="xp-bar-wrap">
+            <div class="xp-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
+              <span id="xpFill"></span>
+            </div>
+            <p id="xpText" class="xp-text">0 / 100 XP</p>
+          </div>
+          <span class="streak-badge">🔥 <span id="streakValue">0</span>日</span>
+        </div>
+
+        <h2>バッジ</h2>
+        <div class="badges-grid" id="badgesGrid"></div>
+
+        <h2>週間統計</h2>
+        <div class="weekly-stats" id="weeklyStatsGrid"></div>
+      </section>
     </main>
 
     <script type="module" src="script.js"></script>
