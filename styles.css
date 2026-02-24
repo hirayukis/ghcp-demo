@@ -23,6 +23,8 @@ body {
   background: #171b22;
   padding: 18px 18px 22px;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.4);
+  position: relative;
+  z-index: 1;
 }
 
 .app-header {
@@ -96,7 +98,7 @@ body {
 .ring-progress {
   stroke: #7fc6ff;
   stroke-linecap: round;
-  transition: stroke-dashoffset 0.25s linear;
+  transition: stroke-dashoffset 0.25s linear, stroke 0.5s ease;
 }
 
 .time {
@@ -222,6 +224,20 @@ body {
   height: 100%;
   background: #6eb8f9;
   transition: width 0.3s ease;
+}
+
+#bgCanvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.btn.effect-on {
+  background: #2a5aa8;
+  border-color: #4f90f5;
 }
 
 @media (max-width: 520px) {

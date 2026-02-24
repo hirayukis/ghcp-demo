@@ -29,11 +29,74 @@ const goalText = document.getElementById("goalText");
 const goalFill = document.getElementById("goalFill");
 const goalBar = document.querySelector(".goal-bar");
 const ring = document.querySelector(".ring-progress");
+const timerRing = document.querySelector(".timer-ring");
+const bgCanvas = document.getElementById("bgCanvas");
+const effectBtn = document.getElementById("effectBtn");
 
 const radius = 96;
 const circumference = 2 * Math.PI * radius;
 
 ring.style.strokeDasharray = `${circumference}`;
+
+// Background ripple effect state
+let effectEnabled = true;
+let ripples = [];
+let lastRippleMs = 0;
+const bgCtx = bgCanvas.getContext("2d");
+
+const RIPPLE_INITIAL_RADIUS = 10;
+const RIPPLE_INITIAL_ALPHA = 0.5;
+const RIPPLE_EXPANSION_RATE = 1.5;
+const RIPPLE_ALPHA_DECAY = 0.004;
+const RIPPLE_INTERVAL_MS = 2500;
+
+function resizeCanvas() {
+  bgCanvas.width = window.innerWidth;
+  bgCanvas.height = window.innerHeight;
+}
+resizeCanvas();
+window.addEventListener("resize", resizeCanvas);
+
+function animateRipples(timestamp) {
+  bgCtx.clearRect(0, 0, bgCanvas.width, bgCanvas.height);
+  if (effectEnabled) {
+    if (state.running && state.mode === "work" && timestamp - lastRippleMs > RIPPLE_INTERVAL_MS) {
+      const rect = timerRing.getBoundingClientRect();
+      ripples.push({ x: rect.left + rect.width / 2, y: rect.top + rect.height / 2, radius: RIPPLE_INITIAL_RADIUS, alpha: RIPPLE_INITIAL_ALPHA });
+      lastRippleMs = timestamp;
+    }
+    ripples = ripples.filter((r) => r.alpha > 0.01);
+    for (const r of ripples) {
+      bgCtx.beginPath();
+      bgCtx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
+      bgCtx.strokeStyle = `rgba(127, 198, 255, ${r.alpha})`;
+      bgCtx.lineWidth = 2;
+      bgCtx.stroke();
+      r.radius += RIPPLE_EXPANSION_RATE;
+      r.alpha -= RIPPLE_ALPHA_DECAY;
+    }
+  } else {
+    ripples = [];
+  }
+  requestAnimationFrame(animateRipples);
+}
+requestAnimationFrame(animateRipples);
+
+// Color interpolation helpers
+function interpolateColor(c1, c2, t) {
+  const r = Math.round(c1[0] + (c2[0] - c1[0]) * t);
+  const g = Math.round(c1[1] + (c2[1] - c1[1]) * t);
+  const b = Math.round(c1[2] + (c2[2] - c1[2]) * t);
+  return `rgb(${r},${g},${b})`;
+}
+
+function getRingColor(ratio, mode) {
+  if (mode !== "work") return "#a8e4b8";
+  if (ratio > 0.5) {
+    return interpolateColor([127, 198, 255], [255, 216, 96], (1 - ratio) * 2);
+  }
+  return interpolateColor([255, 216, 96], [255, 107, 107], (0.5 - ratio) * 2);
+}
 
 function stopTicking() {
   if (timerId !== null) {
@@ -45,7 +108,7 @@ function stopTicking() {
 function updateRing() {
   const ratio = state.remainingSeconds / modes[state.mode].duration;
   ring.style.strokeDashoffset = `${circumference * (1 - ratio)}`;
-  ring.style.stroke = state.mode === "work" ? "#7fc6ff" : "#a8e4b8";
+  ring.style.stroke = getRingColor(ratio, state.mode);
 }
 
 function updateModeButtons() {
@@ -187,6 +250,12 @@ notifyBtn.addEventListener("click", async () => {
     return;
   }
   notifyBtn.textContent = "通知OFF";
+});
+
+effectBtn.addEventListener("click", () => {
+  effectEnabled = !effectEnabled;
+  effectBtn.textContent = effectEnabled ? "エフェクトON" : "エフェクトOFF";
+  effectBtn.classList.toggle("effect-on", effectEnabled);
 });
 
 if ("Notification" in window && Notification.permission === "granted") {
