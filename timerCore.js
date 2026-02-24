@@ -10,20 +10,18 @@ export const modes = {
 };
 
 export function createInitialState(overrides = {}) {
+  const workSeconds = overrides.workSeconds ?? WORK_SECONDS;
+  const breakSeconds = overrides.breakSeconds ?? BREAK_SECONDS;
   return {
     mode: "work",
-    remainingSeconds: WORK_SECONDS,
+    remainingSeconds: workSeconds,
     running: false,
     completedCount: 0,
     cycleCount: 0,
     totalFocusedSeconds: 0,
     totalBreakSeconds: 0,
-    xp: 0,
-    level: 1,
-    streak: 0,
-    lastCompletedDate: null,
-    earnedBadges: {},
-    weeklyStats: {},
+    workSeconds,
+    breakSeconds,
     ...overrides,
   };
 }
@@ -60,19 +58,21 @@ export function stopState(state) {
 }
 
 export function resetState(state) {
+  const duration = state.mode === "work" ? state.workSeconds : state.breakSeconds;
   return {
     ...state,
     running: false,
-    remainingSeconds: modes[state.mode].duration,
+    remainingSeconds: duration,
   };
 }
 
 export function switchModeState(state, nextMode) {
+  const duration = nextMode === "work" ? state.workSeconds : state.breakSeconds;
   return {
     ...state,
     running: false,
     mode: nextMode,
-    remainingSeconds: modes[nextMode].duration,
+    remainingSeconds: duration,
   };
 }
 
@@ -110,13 +110,13 @@ export function tickState(state) {
       nextState.xp += XP_PER_POMODORO;
       nextState.level = Math.floor(nextState.xp / XP_PER_LEVEL) + 1;
       nextState.mode = "break";
+      nextState.remainingSeconds = nextState.breakSeconds;
       phaseChanged = "break";
     } else {
       nextState.mode = "work";
+      nextState.remainingSeconds = nextState.workSeconds;
       phaseChanged = "work";
     }
-
-    nextState.remainingSeconds = modes[nextState.mode].duration;
   }
 
   return { state: nextState, phaseChanged };

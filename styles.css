@@ -1,5 +1,24 @@
 :root {
   color-scheme: dark;
+  --bg-body: #0f1115;
+  --bg-app: #171b22;
+  --bg-section: #202530;
+  --bg-card: #252b36;
+  --text-primary: #f4f7fb;
+  --text-secondary: #c2cad8;
+  --border-app: #30353f;
+  --border-card: #323947;
+  --goal-bar-bg: #353d4b;
+  --goal-bar-fill: #6eb8f9;
+  --btn-bg: #2a303d;
+  --btn-border: #3a4252;
+  --btn-primary-bg: #3a7ee8;
+  --btn-primary-border: #4f90f5;
+  --ring-work: #7fc6ff;
+  --ring-break: #a8e4b8;
+  --ring-bg: #333a49;
+  --settings-panel-bg: #1a1f2a;
+  --settings-select-bg: #2a303d;
 }
 
 * {
@@ -11,16 +30,16 @@ body {
   min-height: 100vh;
   display: grid;
   place-items: center;
-  background: #0f1115;
+  background: var(--bg-body);
   font-family: "Noto Sans JP", "Yu Gothic", "Hiragino Kaku Gothic ProN", sans-serif;
-  color: #f4f7fb;
+  color: var(--text-primary);
 }
 
 .app {
   width: min(92vw, 460px);
-  border: 1px solid #30353f;
+  border: 1px solid var(--border-app);
   border-radius: 18px;
-  background: #171b22;
+  background: var(--bg-app);
   padding: 18px 18px 22px;
   box-shadow: 0 18px 50px rgba(0, 0, 0, 0.4);
 }
@@ -38,17 +57,30 @@ body {
   font-weight: 700;
 }
 
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
 .window-actions {
   display: flex;
   gap: 12px;
   font-size: 20px;
-  color: #c7cfdb;
+  color: var(--text-secondary);
   user-select: none;
+}
+
+.icon-btn {
+  padding: 6px 10px;
+  font-size: 18px;
+  line-height: 1;
+  border-radius: 8px;
 }
 
 .timer-section {
   border-radius: 14px;
-  background: #202530;
+  background: var(--bg-section);
   padding: 18px;
   display: grid;
   justify-items: center;
@@ -64,7 +96,7 @@ body {
 
 .status {
   margin: 0 0 10px;
-  color: #c7d0de;
+  color: var(--text-secondary);
   font-size: 24px;
   font-weight: 600;
 }
@@ -90,11 +122,11 @@ body {
 }
 
 .ring-bg {
-  stroke: #333a49;
+  stroke: var(--ring-bg);
 }
 
 .ring-progress {
-  stroke: #7fc6ff;
+  stroke: var(--ring-work);
   stroke-linecap: round;
   transition: stroke-dashoffset 0.25s linear;
 }
@@ -114,9 +146,9 @@ body {
 }
 
 .btn {
-  border: 1px solid #3a4252;
-  background: #2a303d;
-  color: #f6f8fb;
+  border: 1px solid var(--btn-border);
+  background: var(--btn-bg);
+  color: var(--text-primary);
   border-radius: 10px;
   padding: 10px 18px;
   font-size: 16px;
@@ -124,8 +156,8 @@ body {
 }
 
 .btn.primary {
-  background: #3a7ee8;
-  border-color: #4f90f5;
+  background: var(--btn-primary-bg);
+  border-color: var(--btn-primary-border);
 }
 
 .mode-btn {
@@ -134,8 +166,8 @@ body {
 }
 
 .mode-btn.active {
-  background: #3a7ee8;
-  border-color: #4f90f5;
+  background: var(--btn-primary-bg);
+  border-color: var(--btn-primary-border);
 }
 
 .btn:hover {
@@ -145,7 +177,7 @@ body {
 .progress-section {
   margin-top: 14px;
   border-radius: 14px;
-  background: #202530;
+  background: var(--bg-section);
   padding: 16px;
 }
 
@@ -162,9 +194,9 @@ body {
 }
 
 .metric-card {
-  border: 1px solid #323947;
+  border: 1px solid var(--border-card);
   border-radius: 12px;
-  background: #252b36;
+  background: var(--bg-card);
   padding: 12px;
   min-height: 86px;
   display: grid;
@@ -186,14 +218,14 @@ body {
 .metric-label {
   margin: 4px 0 0;
   font-size: 18px;
-  color: #c2cad8;
+  color: var(--text-secondary);
 }
 
 .goal-progress {
   margin-top: 12px;
-  border: 1px solid #323947;
+  border: 1px solid var(--border-card);
   border-radius: 12px;
-  background: #252b36;
+  background: var(--bg-card);
   padding: 12px;
 }
 
@@ -201,7 +233,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #cfd6e2;
+  color: var(--text-secondary);
   margin-bottom: 8px;
 }
 
@@ -213,14 +245,14 @@ body {
   height: 12px;
   border-radius: 999px;
   overflow: hidden;
-  background: #353d4b;
+  background: var(--goal-bar-bg);
 }
 
 .goal-bar span {
   display: block;
   width: 0%;
   height: 100%;
-  background: #6eb8f9;
+  background: var(--goal-bar-fill);
   transition: width 0.3s ease;
 }
 
@@ -413,4 +445,114 @@ body {
   .progress-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* Settings panel */
+.settings-panel {
+  margin-top: 14px;
+  border-radius: 14px;
+  background: var(--settings-panel-bg);
+  border: 1px solid var(--border-app);
+  padding: 16px;
+}
+
+.settings-panel h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.settings-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-card);
+  gap: 12px;
+}
+
+.settings-row:last-child {
+  border-bottom: none;
+}
+
+.settings-row label,
+.settings-row span {
+  font-size: 15px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.settings-select {
+  background: var(--settings-select-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--btn-border);
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 14px;
+  cursor: pointer;
+}
+
+.sound-toggles {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.sound-toggles .toggle-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--text-primary);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+/* Light theme */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg-body: #f0f4f8;
+  --bg-app: #ffffff;
+  --bg-section: #f5f7fa;
+  --bg-card: #eef2f7;
+  --text-primary: #1a2233;
+  --text-secondary: #5a6880;
+  --border-app: #d0d8e8;
+  --border-card: #c8d2e0;
+  --goal-bar-bg: #d8e0eb;
+  --goal-bar-fill: #3a7ee8;
+  --btn-bg: #e8edf5;
+  --btn-border: #c0cad8;
+  --btn-primary-bg: #3a7ee8;
+  --btn-primary-border: #4f90f5;
+  --ring-work: #3a7ee8;
+  --ring-break: #34a85a;
+  --ring-bg: #d0d8e8;
+  --settings-panel-bg: #f0f4f8;
+  --settings-select-bg: #ffffff;
+}
+
+/* Focus (minimal) theme */
+:root[data-theme="focus"] {
+  color-scheme: dark;
+  --bg-body: #0a0a0a;
+  --bg-app: #0f0f0f;
+  --bg-section: #121212;
+  --bg-card: #161616;
+  --text-primary: #d8d8d8;
+  --text-secondary: #707070;
+  --border-app: #242424;
+  --border-card: #242424;
+  --goal-bar-bg: #242424;
+  --goal-bar-fill: #606060;
+  --btn-bg: #1c1c1c;
+  --btn-border: #303030;
+  --btn-primary-bg: #2c2c2c;
+  --btn-primary-border: #404040;
+  --ring-work: #909090;
+  --ring-break: #5a5a5a;
+  --ring-bg: #242424;
+  --settings-panel-bg: #0f0f0f;
+  --settings-select-bg: #1c1c1c;
 }

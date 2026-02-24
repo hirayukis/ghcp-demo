@@ -53,6 +53,31 @@ describe("state transitions", () => {
     expect(switched.remainingSeconds).toBe(BREAK_SECONDS);
     expect(switched.running).toBe(false);
   });
+
+  test("initial state stores default work and break seconds", () => {
+    const initial = createInitialState();
+    expect(initial.workSeconds).toBe(WORK_SECONDS);
+    expect(initial.breakSeconds).toBe(BREAK_SECONDS);
+  });
+
+  test("custom work and break durations are stored in state", () => {
+    const custom = createInitialState({ workSeconds: 15 * 60, breakSeconds: 10 * 60 });
+    expect(custom.workSeconds).toBe(15 * 60);
+    expect(custom.breakSeconds).toBe(10 * 60);
+    expect(custom.remainingSeconds).toBe(15 * 60);
+  });
+
+  test("reset uses custom break duration when in break mode", () => {
+    const custom = createInitialState({ mode: "break", remainingSeconds: 10, breakSeconds: 10 * 60 });
+    const reset = resetState(custom);
+    expect(reset.remainingSeconds).toBe(10 * 60);
+  });
+
+  test("switch mode uses custom duration from state", () => {
+    const custom = createInitialState({ workSeconds: 35 * 60, breakSeconds: 15 * 60 });
+    const switched = switchModeState(custom, "break");
+    expect(switched.remainingSeconds).toBe(15 * 60);
+  });
 });
 
 describe("tick behavior", () => {
@@ -92,6 +117,18 @@ describe("tick behavior", () => {
     expect(state.mode).toBe("work");
     expect(state.remainingSeconds).toBe(WORK_SECONDS);
     expect(state.totalBreakSeconds).toBe(11);
+  });
+
+  test("phase change uses custom durations from state", () => {
+    const customWork = createInitialState({ running: true, remainingSeconds: 1, workSeconds: 35 * 60, breakSeconds: 10 * 60 });
+    const { state } = tickState(customWork);
+    expect(state.mode).toBe("break");
+    expect(state.remainingSeconds).toBe(10 * 60);
+
+    const customBreak = { ...state, running: true, remainingSeconds: 1 };
+    const { state: backToWork } = tickState(customBreak);
+    expect(backToWork.mode).toBe("work");
+    expect(backToWork.remainingSeconds).toBe(35 * 60);
   });
 });
 

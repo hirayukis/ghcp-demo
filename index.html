@@ -10,10 +10,13 @@
     <main class="app">
       <header class="app-header">
         <h1>ポモドーロタイマー</h1>
-        <div class="window-actions" aria-hidden="true">
-          <span>-</span>
-          <span>○</span>
-          <span>×</span>
+        <div class="header-right">
+          <button id="settingsBtn" class="btn icon-btn" type="button" aria-label="設定を開く" aria-expanded="false" aria-controls="settingsPanel">⚙</button>
+          <div class="window-actions" aria-hidden="true">
+            <span>-</span>
+            <span>○</span>
+            <span>×</span>
+          </div>
         </div>
       </header>
 
@@ -71,23 +74,41 @@
         </div>
       </section>
 
-      <section class="gamification-section" aria-label="ゲーミフィケーション">
-        <div class="xp-row">
-          <span class="level-badge">Lv.<span id="levelValue">1</span></span>
-          <div class="xp-bar-wrap">
-            <div class="xp-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0">
-              <span id="xpFill"></span>
-            </div>
-            <p id="xpText" class="xp-text">0 / 100 XP</p>
-          </div>
-          <span class="streak-badge">🔥 <span id="streakValue">0</span>日</span>
+      <section class="settings-panel" id="settingsPanel" hidden aria-label="設定">
+        <h2>設定</h2>
+        <div class="settings-row">
+          <label for="workMinutesSelect">集中時間</label>
+          <select id="workMinutesSelect" class="settings-select">
+            <option value="15">15分</option>
+            <option value="25">25分</option>
+            <option value="35">35分</option>
+            <option value="45">45分</option>
+          </select>
         </div>
-
-        <h2>バッジ</h2>
-        <div class="badges-grid" id="badgesGrid"></div>
-
-        <h2>週間統計</h2>
-        <div class="weekly-stats" id="weeklyStatsGrid"></div>
+        <div class="settings-row">
+          <label for="breakMinutesSelect">休憩時間</label>
+          <select id="breakMinutesSelect" class="settings-select">
+            <option value="5">5分</option>
+            <option value="10">10分</option>
+            <option value="15">15分</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <label for="themeSelect">テーマ</label>
+          <select id="themeSelect" class="settings-select">
+            <option value="dark">ダーク</option>
+            <option value="light">ライト</option>
+            <option value="focus">フォーカス</option>
+          </select>
+        </div>
+        <div class="settings-row">
+          <span>サウンド</span>
+          <div class="sound-toggles">
+            <label class="toggle-label"><input type="checkbox" id="soundStartCheck"> 開始音</label>
+            <label class="toggle-label"><input type="checkbox" id="soundEndCheck"> 終了音</label>
+            <label class="toggle-label"><input type="checkbox" id="soundTickCheck"> tick音</label>
+          </div>
+        </div>
       </section>
     </main>
 
