@@ -116,12 +116,6 @@ function notifyPhaseChange(nextMode) {
   );
 }
 
-function switchMode(nextMode) {
-  mode = nextMode;
-  remainingSeconds = modes[mode].duration;
-  render();
-}
-
 function finishSession() {
   const result = tickState(state);
   state = result.state;
@@ -157,7 +151,7 @@ function resetTimer() {
 }
 
 startPauseBtn.addEventListener("click", () => {
-  if (running) {
+  if (state.running) {
     stopTimer();
     return;
   }
